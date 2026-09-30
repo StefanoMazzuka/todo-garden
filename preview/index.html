@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TO DO Garden · Fondo de prueba</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #f4f2e9; color: #304739; font: 16px system-ui, sans-serif; }
+  main { max-width: 860px; margin: auto; padding: 28px 20px; }
+  h1 { font-size: 26px; margin: 4px 0 8px; }
+  p { line-height: 1.6; }
+  .eyebrow { font-size: 12px; letter-spacing: .16em; }
+  .controls, .legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 20px 0; }
+  label { cursor: pointer; }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; border: 1px solid #56754d; }
+  .legend span { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; }
+  i { width: 16px; height: 16px; background: var(--color); }
+</style>
+<main>
+  <div class="eyebrow">TO DO GARDEN / PROTOTIPO</div>
+  <h1>Un primer rincón del jardín</h1>
+  <p>Césped, agua, caminos y parcelas. Solo bloques de color para probar la distribución del fondo.</p>
+  <div class="controls">
+    <label><input id="grid" type="checkbox"> Cuadrícula</label>
+    <label><input id="zones" type="checkbox"> Zonas de plantado y obstáculos</label>
+  </div>
+  <canvas width="768" height="768" role="img" aria-label="Jardín de 24 por 24 tiles: césped verde, estanque azul al nordeste, caminos de arena conectados y tres parcelas marrones."></canvas>
+  <p id="status" role="status">Cargando el fondo…</p>
+  <div class="legend">
+    <span><i style="--color:#82ad68"></i>Césped</span>
+    <span><i style="--color:#559dbb"></i>Agua</span>
+    <span><i style="--color:#dfc592"></i>Camino</span>
+    <span><i style="--color:#b18359"></i>Parcela</span>
+  </div>
+  <p>24 × 24 celdas · Tiles de 32 × 32 px · Fondo de 768 × 768 px</p>
+</main>
+<script src="map.js"></script>
+<script>
+  const canvas = document.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const grid = document.querySelector('#grid');
+  const zones = document.querySelector('#zones');
+  const sheet = new Image();
+  function draw() {
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 768, 768);
+    garden.ground.forEach((gid, i) => {
+      const x = (i % 24) * 32, y = Math.floor(i / 24) * 32;
+      ctx.drawImage(sheet, (gid - 1) * 32, 0, 32, 32, x, y, 32, 32);
+      if (zones.checked && (garden.blocked[i] || garden.plantable[i])) {
+        ctx.fillStyle = garden.blocked[i] ? '#882f5366' : '#ffeb6988';
+        ctx.fillRect(x, y, 32, 32);
+        ctx.strokeStyle = garden.blocked[i] ? '#67273d' : '#755a16';
+        ctx.strokeRect(x + 5.5, y + 5.5, 21, 21);
+        if (garden.blocked[i]) {
+          ctx.beginPath(); ctx.moveTo(x+6, y+6); ctx.lineTo(x+26, y+26); ctx.stroke();
+        }
+      }
+    });
+    if (grid.checked) {
+      ctx.strokeStyle = '#183b2930';
+      ctx.beginPath();
+      for (let p = 32; p < 768; p += 32) {
+        ctx.moveTo(p+.5, 0); ctx.lineTo(p+.5, 768);
+        ctx.moveTo(0, p+.5); ctx.lineTo(768, p+.5);
+      }
+      ctx.stroke();
+    }
+    document.querySelector('#status').textContent = zones.checked
+      ? 'Amarillo: parcelas reservadas. Rojo con diagonal: agua y borde bloqueados. El resto permite pasear.'
+      : 'Vista del terreno con la hoja PNG provisional.';
+  }
+  sheet.onload = () => { draw(); grid.onchange = draw; zones.onchange = draw; };
+  sheet.onerror = () => { document.querySelector('#status').textContent = 'No se pudo cargar assets/textures/garden.png.'; };
+  sheet.src = '../assets/textures/garden.png';
+</script>
+</html>
